@@ -1,66 +1,91 @@
-## [quick start by doc](https://datahubproject.io/docs/quickstart)
+# Demo datahub
+## Why we need a metadata management platform?
+### For data user
+* Who own the data? Who manange the data?
+* What is the logic and definition of the data?
+* Where does the data come from?
+* When was the data created? When was it last updated?
+* How does the data be updated?
+* Is the data of sensitive nature? is the data in good quality?
+### For data custodian
+* How do I know the lineage of data and application?
+
+### For data owner
+* Who has the access right of data
+* Where does my data go?
+
+## Goal
+* data quality
+* data obserbility
+* data governance
+
+## [open source data catalog tools comparison](https://atlan.com/open-source-data-catalog-tools/)
+
+
+## [datahub quick start by doc](https://datahubproject.io/docs/quickstart)
 ```
 python3 -m pip install --upgrade pip wheel setuptools
 python3 -m pip uninstall datahub acryl-datahub || true  # sanity check - ok if it fails
 python3 -m pip install --upgrade acryl-datahub
+python3 -m pip install --upgrade acryl-datahub[postgres]
+python3 -m pip install --upgrade acryl-datahub[airflow]
+python3 -m pip install --upgrade acryl-datahub-airflow-plugin
+
 python3 -m datahub version
 python3 -m datahub docker quickstart
-
 python3 -m datahub docker check
 ```
 
-## db setup
-```
-sudo mkdir /opt/pgdata
 
-docker run -p 5433:5432 \
-	--name dh-source-postgres \
-	-e POSTGRES_PASSWORD=datahub \
-	-e PGDATA=/var/lib/postgresql/data/pgdata \
-	-v /var/pgdata:/var/lib/postgresql/data \
-    --restart always \
-	 -d postgres:12
-
-docker exec -it 0b66ec693f4d bash
-su postgres
+## [setup airflow](https://datahubproject.io/docs/docker/airflow/local_airflow)
 ```
-
-## setup airflow
-```
+mkdir -p airflow_install
+cd airflow_install
+# Download docker-compose file
+curl -L 'https://raw.githubusercontent.com/datahub-project/datahub/master/docker/airflow/docker-compose.yaml' -o docker-compose.yaml
+# Create dags directory
 mkdir -p ./dags ./logs ./plugins
-echo -e "AIRFLOW_UID=$(id -u)" > .env
+# Download a sample DAG
+curl -L 'https://raw.githubusercontent.com/datahub-project/datahub/master/metadata-ingestion/src/datahub_provider/example_dags/lineage_backend_demo.py' -o dags/lineage_backend_demo.py
+
+# echo -e "AIRFLOW_UID=$(id -u)" > .env
 
 docker-compose up airflow-init
 docker-compose up
 ```
 
 
-## exec in database
+## execute in database
 ```
 CREATE USER etlworker;
 ALTER USER etlworker WITH PASSWORD 'etlworker';
-create database rawdata;
+CREATE DATABASE rawdata;
 COMMENT ON DATABASE rawdata IS '原始資料資料庫';
-create database feature;
+CREATE DATABASE feature;
 COMMENT ON DATABASE feature IS '特徵資料資料庫';
 GRANT CONNECT ON DATABASE rawdata TO etlworker;
 GRANT CONNECT ON DATABASE feature TO etlworker;
 
-
 \c rawdata
-create schema mlaas_rawdata;
-COMMENT ON SCHEMA mlaas_rawdata IS '基礎共用之分析資料'
-create table mlaas_rawdata.cm_customer(cust_no character varying, age integer, etl_dt date);
+CREATE SCHEMA mlaas_rawdata;
+COMMENT ON SCHEMA mlaas_rawdata IS '基礎共用之分析資料';
+CREATE TABLE mlaas_rawdata.cm_customer(cust_no character varying, age integer, etl_dt date);
 COMMENT ON TABLE mlaas_rawdata.cm_customer IS '顧客層之資料';
 COMMENT ON COLUMN mlaas_rawdata.cm_customer.cust_no IS '顧客ID';
 COMMENT ON COLUMN mlaas_rawdata.cm_customer.age IS '顧客年齡';
 COMMENT ON COLUMN mlaas_rawdata.cm_customer.etl_dt IS '處理日期';
 INSERT INTO mlaas_rawdata.cm_customer VALUES('A123456789',50,now()),('A123111111',20,now()),('A122222222',10,now());
 
-
 GRANT USAGE ON SCHEMA mlaas_rawdata TO etlworker;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA mlaas_rawdata TO etlworker;
 
+CREATE USER esb13131;
+ALTER USER esb13131 WITH PASSWORD 'esb13131';
+GRANT USAGE ON SCHEMA mlaas_rawdata TO esb13131;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA mlaas_rawdata TO esb13131;
+select * from mlaas_rawdata.cm_customer ;
+
+\c feature
 ```
 
 # Ingestion
@@ -68,16 +93,16 @@ GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA mlaas_rawdata TO etlworker;
 * pull-based: BigQuery, Snowflake, Looker, Tableau
 
 ## Sources
-* Postgres, Elastic Search, Kafka, S3, Metabase, superset, dbt, LDAP
+* Postgres, Elastic Search, Kafka, S3, Metabase, superset, dbt, LDAP...
 
 ## Sinks
 
-## ingest postgres
+## [ingest postgres](./postgres_recipe.yaml)
 ```
 python3 -m datahub ingest -c postgres_recipe.yaml
 ```
 
-## outcome
+### outcome
 ```
 [2022-04-26 11:11:55,980] INFO     {datahub.cli.ingest_cli:96} - DataHub CLI version: 0.8.33.1
 [2022-04-26 11:12:00,561] INFO     {datahub.cli.ingest_cli:112} - Starting metadata ingestion
