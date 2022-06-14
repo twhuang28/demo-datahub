@@ -7,10 +7,16 @@ source:
 
     # Credentials
     username: etlworker
-    password: esb@1313
+    password: etlworker
 
     # Options
     database_alias: rawdata_db
+    include_tables: True
+    include_views: True
+
+    # Profiling
+    profiling:
+        enabled: True
 
 transformers:
   - type: "pattern_add_dataset_tags"
