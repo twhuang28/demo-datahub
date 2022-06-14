@@ -1,4 +1,4 @@
-# Demo datahub
+# Introduction
 ## Why we need a metadata management platform?
 ### For data user
 * Who own the data? Who manange the data?
@@ -9,6 +9,7 @@
 * Is the data of sensitive nature? is the data in good quality?
 ### For data custodian
 * How do I know the lineage of data and application?
+* How can I conduct impact analysis when the data changed?
 
 ### For data owner
 * Who has the access right of data
@@ -21,7 +22,43 @@
 
 ## [open source data catalog tools comparison](https://atlan.com/open-source-data-catalog-tools/)
 
+## DataHub Architecture
+![](https://datahubproject.io/assets/images/datahub-architecture-30b34a888241e0780c72b7f618137fe4.png)
 
+## Ingestion
+* push-based: Airflow, Spark, Great Expectations and Protobuf Schemas
+* pull-based: BigQuery, Snowflake, Looker, Tableau
+* ![Metadata Ingestion Architecture](https://datahubproject.io/assets/images/ingestion-architecture-cd631d7c4a648ceb82908ce25b9f93b9.png)
+
+### Sources
+* Postgres, Elastic Search, Kafka, S3, Metabase, superset, dbt, LDAP...
+
+### Sinks
+* DataHub Rest
+* DataHub Kafka
+
+## [Metadata model](https://datahubproject.io/docs/metadata-modeling/metadata-model)
+* Pegasus schema language ([PDL](https://linkedin.github.io/rest.li/pdl_schema))
+* **Entities**: primary node in the metadata graph
+    * Data Platform
+    * Dataset
+    * Chart
+    * Dashboard
+    * Data Job, Data Flow
+* **Aspects**: a collection of attributes that describes a particular facet of an entity
+    * [Tags](https://datahubproject.io/docs/tags): Informal, loosely controlled labels that serve as a tool for search & discovery. Assets may have multiple tags. No formal, central management.
+    * [Business Glossary](https://datahubproject.io/docs/rfc/active/1842-business_glossary/): A controlled vocabulary, with optional hierarchy. Terms are typically used to standardize types of leaf-level attributes (i.e. schema fields) for governance. E.g. (EMAIL_PLAINTEXT)
+    * [Domains](https://datahubproject.io/docs/domains): A set of top-level categories. Usually aligned to business units / disciplines to which the assets are most relevant. Central or distributed management. Single Domain assignment per data asset.
+    * ownership
+    * status
+* **Relationships**: a named edge between 2 entities
+    * OwnedBy
+    * Contains
+* ![](https://datahubproject.io/assets/images/metadata-model-chart-a22bf2c3338dcc0a5d40405dd51e7f13.png)
+
+---
+
+# Demo
 ## [datahub quick start by doc](https://datahubproject.io/docs/quickstart)
 ```
 python3 -m pip install --upgrade pip wheel setuptools
@@ -35,7 +72,6 @@ python3 -m datahub version
 python3 -m datahub docker quickstart
 python3 -m datahub docker check
 ```
-
 
 ## [setup airflow](https://datahubproject.io/docs/docker/airflow/local_airflow)
 ```
@@ -54,8 +90,7 @@ docker-compose up airflow-init
 docker-compose up
 ```
 
-
-## execute in database
+## Execute SQL in Postgres
 ```
 CREATE USER etlworker;
 ALTER USER etlworker WITH PASSWORD 'etlworker';
@@ -87,15 +122,6 @@ select * from mlaas_rawdata.cm_customer ;
 
 \c feature
 ```
-
-# Ingestion
-* push-based: Airflow, Spark, Great Expectations and Protobuf Schemas
-* pull-based: BigQuery, Snowflake, Looker, Tableau
-
-## Sources
-* Postgres, Elastic Search, Kafka, S3, Metabase, superset, dbt, LDAP...
-
-## Sinks
 
 ## [ingest postgres](./postgres_recipe.yaml)
 ```
