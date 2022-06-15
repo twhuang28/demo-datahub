@@ -1,0 +1,65 @@
+source:
+  type: postgres
+  config:
+    # Coordinates
+    host_port: localhost:5432
+    database: feature
+    # platform_instance: rawdata_db
+
+    # Credentials
+    username: etlworker
+    password: etlworker
+
+    # Options
+    database_alias: feature_db
+    include_tables: True
+    include_views: True
+
+    # stateful_ingestion:
+    #   enabled: True
+    #   state_provider:
+    #     type: "datahub"
+
+    # Profiling
+    profiling:
+      enabled: True
+      report_dropped_profiles: True
+      query_combiner_enabled: False
+      include_field_histogram: True
+      include_field_distinct_value_frequencies: True
+      include_field_quantiles: True
+      include_field_sample_values: False
+
+transformers:
+  - type: "pattern_add_dataset_tags"
+    config:
+      tag_pattern:
+        rules:
+          ".*urn:li:dataPlatform:postgres,rawdata_db.mlaas_rawdata.cm_cust*": ["urn:li:tag:cust-level"]
+  - type: "pattern_add_dataset_tags"
+    config:
+      tag_pattern:
+        rules:
+          ".*urn:li:dataPlatform:postgres,rawdata_db.*": ["urn:li:tag:rawdata"]
+  - type: "pattern_add_dataset_terms"
+    config:
+      term_pattern:
+        rules:
+          ".*urn:li:dataPlatform:postgres,rawdata_db.mlaas_rawdata.*": ["urn:li:glossaryTerm:data-governance-level-basic", "urn:li:glossaryTerm:de-identification"]
+          ".*urn:li:dataPlatform:postgres,rawdata_db.mlaas_limit.*": ["urn:li:glossaryTerm:confidential-information"]
+  - type: "pattern_add_dataset_terms"
+    config:
+      term_pattern:
+        rules:
+          ".*urn:li:dataPlatform:postgres,rawdata_db.*": ["urn:li:glossaryTerm:rawdata"]
+
+sink:
+  type: "datahub-rest"
+  config:
+    server: "http://localhost:8080"
+
+  # type: "datahub-kafka"
+  # config:
+  #   connection:
+  #     bootstrap: "localhost:9092"
+  #     schema_registry_url: "http://localhost:8081"
