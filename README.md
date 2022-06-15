@@ -111,16 +111,47 @@ COMMENT ON COLUMN mlaas_rawdata.cm_customer.age IS '顧客年齡';
 COMMENT ON COLUMN mlaas_rawdata.cm_customer.etl_dt IS '處理日期';
 INSERT INTO mlaas_rawdata.cm_customer VALUES('A123456789',50,now()),('A123111111',20,now()),('A122222222',10,now());
 
+CREATE SCHEMA mlaas_limit;
+COMMENT ON SCHEMA mlaas_limit IS '機敏資料管制';
+CREATE TABLE mlaas_limit.cdtx0001(chid character varying, cano character varying, dtadt date, flam1 numeric);
+COMMENT ON TABLE mlaas_limit.cdtx0001 IS '顧客層之資料';
+COMMENT ON COLUMN mlaas_limit.cdtx0001.chid IS '顧客ID';
+COMMENT ON COLUMN mlaas_limit.cdtx0001.cano IS '交易卡號';
+COMMENT ON COLUMN mlaas_limit.cdtx0001.dtadt IS '資料日期';
+COMMENT ON COLUMN mlaas_limit.cdtx0001.flam1 IS '實付金額';
+
+INSERT INTO mlaas_limit.cdtx0001(chid, cano, flam1, dtadt) VALUES
+('A123456789',1234,500,now()),
+('A123456789',1234,60,'2022-05-01'),
+('A123111111',2345,20,now()),
+('A123111111',3333,5000,now()),
+('A122222222',3456,10,'2022-05-03');
+
 GRANT USAGE ON SCHEMA mlaas_rawdata TO etlworker;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA mlaas_rawdata TO etlworker;
+GRANT USAGE ON SCHEMA mlaas_limit TO etlworker;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA mlaas_limit TO etlworker;
 
 CREATE USER esb13131;
 ALTER USER esb13131 WITH PASSWORD 'esb13131';
 GRANT USAGE ON SCHEMA mlaas_rawdata TO esb13131;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA mlaas_rawdata TO esb13131;
+GRANT USAGE ON SCHEMA mlaas_limit TO esb13131;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA mlaas_limit TO esb13131;
 select * from mlaas_rawdata.cm_customer ;
 
 \c feature
+CREATE USER esb13131;
+ALTER USER esb13131 WITH PASSWORD 'esb13131';
+CREATE SCHEMA if_polaris;
+GRANT CREATE, USAGE ON SCHEMA if_polaris TO esb13131;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA if_polaris TO esb13131;
+
+```
+
+## [ingest dataset to job to dataset](https://github.com/datahub-project/datahub/blob/master/metadata-ingestion/examples/library/lineage_dataset_job_dataset.py)
+```
+python3 lineage_dataset_job_dataset.py
 ```
 
 ## [ingest postgres](./postgres_recipe.yaml)
