@@ -146,6 +146,8 @@ ALTER USER esb13131 WITH PASSWORD 'esb13131';
 CREATE SCHEMA if_polaris;
 GRANT CREATE, USAGE ON SCHEMA if_polaris TO esb13131;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA if_polaris TO esb13131;
+GRANT CREATE, USAGE ON SCHEMA if_polaris TO etlworker;
+GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA if_polaris TO etlworker;
 
 ```
 
@@ -157,6 +159,33 @@ python3 lineage_dataset_job_dataset.py
 ## [ingest postgres](./postgres_recipe.yaml)
 ```
 python3 -m datahub ingest -c postgres_recipe.yaml
+```
+* [**CAUTIOUS**] transformers pattern will only hit once in a rules block. If you want to hit twice, you should move the tag_pattern to another type block. e.g.:
+
+```
+# a dataset will not hit twice rules, so it will only tag 'rawdata' 
+transformers:
+  - type: "pattern_add_dataset_tags"
+    config:
+      tag_pattern:
+        rules:
+          ".*urn:li:dataPlatform:postgres,rawdata_db.*": ["urn:li:tag:rawdata"]
+          ".*urn:li:dataPlatform:postgres,rawdata_db.mlaas_rawdata.cm_cust*": ["urn:li:tag:cust-level"]
+```
+
+```
+# if you want to hit twice rules, you should set another block
+transformers:
+  - type: "pattern_add_dataset_tags"
+    config:
+      tag_pattern:
+        rules:
+          ".*urn:li:dataPlatform:postgres,rawdata_db.*": ["urn:li:tag:rawdata"]
+  - type: "pattern_add_dataset_tags"
+    config:
+      tag_pattern:
+        rules:
+          ".*urn:li:dataPlatform:postgres,rawdata_db.mlaas_rawdata.cm_cust*": ["urn:li:tag:cust-level"]
 ```
 
 ### outcome
@@ -219,3 +248,11 @@ Sink (datahub-rest) report:
 
 Pipeline finished successfully
 ```
+
+## Common senario
+* Add data dictionary
+* Manage tags, glossary terms, domains
+* Impact analysis
+* Explore data
+* Manange lineage
+* User resignation
